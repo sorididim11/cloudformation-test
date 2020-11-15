@@ -1,0 +1,41 @@
+Parameters:
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instance
+    Type: 'AWS::EC2::KeyPair::KeyName'
+  ExportedStackName:
+    Type: String
+    MinLength : 1
+    MaxLength : 255
+    AllowedPattern : "^[a-zA-Z][-a-zA-Z0-9]*$"
+    Default : "cloudformation-test"
+
+Mappings:
+  RegionMap:
+    us-east-1:
+      AMI: ami-76f0061f
+    us-west-1:
+      AMI: ami-655a0a20
+    eu-west-1:
+      AMI: ami-7fd4e10b
+    ap-southeast-1:
+      AMI: ami-72621c20
+    ap-northeast-1:
+      AMI: ami-8e08a38f
+
+Resources:
+
+  Ec2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      KeyName: !Ref KeyName
+      ImageId: ami-03b42693dc6a7dc35
+      InstanceType: t2.micro
+      NetworkInterfaces: 
+      - GroupSet: 
+        - Fn::ImportValue: 
+            Fn::Sub: ${ExportedStackName}-WebSecurityGroupID 
+        DeviceIndex: '0'
+        SubnetId: 
+          Fn::ImportValue: 
+            Fn::Sub: ${ExportedStackName}-PublicSubnetA
+          #Fn::ImportValue: cloudformation-test-PublicSubnetA

@@ -327,6 +327,21 @@ Resources:
     Condition: BuildNATGateway
     Properties:
       Domain: vpc
+  
+  WebSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
 
 
 Outputs:
@@ -370,3 +385,8 @@ Outputs:
     Value: !Ref PrivateSubnetC
     Export:
       Name: !Sub ${AWS::StackName}-PrivateSubnetC
+  WebSecurityGroup:
+    Description: Open ssh, HTTP ports
+    Value: !GetAtt WebSecurityGroup.GroupId
+    Export:
+      Name: !Sub ${AWS::StackName}-WebSecurityGroupID
