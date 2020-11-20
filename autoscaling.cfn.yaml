@@ -1,0 +1,242 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters: 
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro]
+    ConstraintDescription: must be a valid EC2 instance type.
+  OperatorEMail:
+    Description: EMail address to notify if there are any scaling operations
+    Type: String
+    Default: sorididim11@gmail.com
+    AllowedPattern: ([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)
+    ConstraintDescription: must be a valid email address.
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: general
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+Resources: 
+  NotificationTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      Subscription:
+        - Endpoint: !Ref OperatorEMail
+          Protocol: email
+
+  EC2InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: '/'
+      Roles:
+      - !Ref EC2InstanceIAMRole
+  EC2InstanceIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - 'ec2.amazonaws.com'
+          Action:
+          - 'sts:AssumeRole'
+      Path: '/'
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy'
+
+  WebSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable SSH, HTTP access via port 22, 80 respectively
+      VpcId: vpc-323a8a59
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      Comment: Install a simple application
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              httpd: []
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Join ['', ['[main]
+
+                    ', stack=, !Ref 'AWS::StackId', '
+
+                    ', region=, !Ref 'AWS::Region', '
+
+                    ']]
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Join ['', ['[cfn-auto-reloader-hook]
+
+                    ', 'triggers=post.update
+
+                    ', 'path=Resources.LaunchConfig.Metadata.AWS::CloudFormation::Init
+
+                    ', 'action=/opt/aws/bin/cfn-init -v ', '         --stack ', !Ref 'AWS::StackName',
+                  '         --resource LaunchConfig ', '         --region ', !Ref 'AWS::Region',
+                  '
+                    ', 'runas=root
+
+                    ']]
+          services:
+            sysvinit:
+              httpd:
+                enabled: false
+                ensureRunning: false
+              cfn-hup:
+                enabled: true
+                ensureRunning: true
+                files: [/etc/cfn/cfn-hup.conf, /etc/cfn/hooks.d/cfn-auto-reloader.conf]
+    Properties:
+      AssociatePublicIpAddress: true
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      ImageId: ami-03b42693dc6a7dc35
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroups: [!Ref 'WebSecurityGroup' ]
+      UserData: !Base64
+        Fn::Join:
+        - ''
+        - ['#!/bin/bash -xe
+
+            ', 'sudo yum update -y aws-cfn-bootstrap
+
+            ', 'sudo yum install -y ruby wget
+
+            ', 'cd /home/ec2-user
+
+            ', 'wget https://aws-codedeploy-ap-northeast-2.s3.ap-northeast-2.amazonaws.com/latest/install
+
+            ', 'chmod +x ./install
+
+            ', 'sudo ./install auto
+
+            ', 'sudo /opt/aws/bin/cfn-init -v ', '         --stack ', !Ref 'AWS::StackName',
+          '         --resource LaunchConfig ', '         --region ', !Ref 'AWS::Region',
+          '
+            ', 'sudo /opt/aws/bin/cfn-signal -e $? ', '         --stack ', !Ref 'AWS::StackName',
+          '         --resource WebAutoScalingGroup ', '         --region ', !Ref 'AWS::Region',
+          '
+            ']
+
+
+  WebAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones: !GetAZs ''
+      LaunchConfigurationName: !Ref LaunchConfig
+      MaxSize: 2
+      MinSize: 1
+      LoadBalancerNames: [!Ref 'ElasticLoadBalancer']
+      NotificationConfigurations:
+        - TopicARN: !Ref 'NotificationTopic'
+          NotificationTypes: ['autoscaling:EC2_INSTANCE_LAUNCH', 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR',
+            'autoscaling:EC2_INSTANCE_TERMINATE', 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR']   
+      Tags:
+        - Key: Name
+          Value: value
+          PropagateAtLaunch: True
+    CreationPolicy: # 해당 리소스가 만들어지고 클라우드포메이션에 complete 시그널을 보내기전에 시간을 delay 시킴. 리소스을 보내기 위해cfn-signa helper script 를 이용 즉 스택 생성 과정에 소프트웨어 설치 등 작업이 필요할때 스택 생성 과정을 해당 과정을 지나치지 말고 기다리라는 뜻
+      ResourceSignal:
+        Timeout: PT15M
+        Count: 1
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 1
+        MaxBatchSize: 1
+        PauseTime: PT15M
+        WaitOnResourceSignals: true 
+
+
+  WebServerScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref 'WebAutoScalingGroup'
+      Cooldown: '60'
+      ScalingAdjustment: 1
+  WebServerScaleDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref 'WebAutoScalingGroup'
+      Cooldown: '60'
+      ScalingAdjustment: -1
+      
+  CPUAlarmHigh:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Scale-up if CPU > 90% for 10 minutes
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 90
+      AlarmActions: [!Ref 'WebServerScaleUpPolicy']
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref 'WebAutoScalingGroup'
+      ComparisonOperator: GreaterThanThreshold
+  CPUAlarmLow:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Scale-down if CPU < 70% for 10 minutes
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 70
+      AlarmActions: [!Ref 'WebServerScaleDownPolicy']
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref 'WebAutoScalingGroup'
+      ComparisonOperator: LessThanThreshold
+
+  ElasticLoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      ConnectionSettings:
+        IdleTimeout: 1
+      HealthCheck:
+        HealthyThreshold: '2'
+        Interval: '15'
+        Target: TCP:80
+        Timeout: '5'
+        UnhealthyThreshold: '2'
+      Listeners:
+      - InstancePort: '80'
+        InstanceProtocol: TCP
+        LoadBalancerPort: '80'
+        Protocol: TCP
+      Scheme: internet-facing
+      SecurityGroups:
+      - Ref: WebSecurityGroup
+      Subnets:
+      - subnet-01453a071115c7360
+
+Outputs:
+  URL:
+    Description: The URL of the website
+    Value: !Join ['', ['http://', !GetAtt [ElasticLoadBalancer, DNSName]]]
