@@ -22,8 +22,20 @@ Parameters:
   GithubFullRepo:
     Description: The git repository base name
     Type: String
-    Default: "sorididim11/MyDemoRepo"
+    Default: "sorididim11/q"
 
+  UpdateInplaceToBlueGreenDeploymentLambdaARN:
+    Description: To handle custom Resource which invokes lambda function to UpdateInplaceToBlueGreenDeployment, lambda functions ARN is required
+    Type: String
+    Default: "arn:aws:lambda:${AWSRegion}:${AccountId):fucntion:UpdateInplaceToBlueGreenDeploymentLambda"
+  DeleteAsgOnDeploymentFailureLambdaARN:
+    Description: To handle custom Resource which invokes lambda function to DeleteAsgOnDeploymentFailure, lambda functions ARN is required
+    Type: String
+    Default: Fn::Sub arn:aws:lambda:${AWSRegion}:${AccountId):fucntion:DeleteAsgOnDeploymentFailureLambda
+  DeleteS3BucketLambdaARN:
+    Description: To handle custom Resource which invokes lambda function to DeleteS3Bucket, lambda functions ARN is required
+    Type: String
+    Default: Fn::Sub arn:aws:lambda:${AWSRegion}:${AccountId):fucntion:cloudformationOnDelete
 Resources: 
   # bucket for pipeline
   MyCodePipelineBucket:
@@ -171,8 +183,8 @@ Resources:
   MyApplication:
     Type: "AWS::CodeDeploy::Application"
     Properties:
-      ApplicationName: deom1
-      ComputePlatform: Server
+      ApplicationName: !Sub ${AWS::StackName}-app
+      #ComputePlatform: Server
   # MyDeploymentConfig:
   #   Type: "AWS::CodeDeploy::DeploymentConfig"
   #   Properties:
@@ -185,19 +197,35 @@ Resources:
     Properties:
       ApplicationName: !Ref MyApplication #required
       #DeploymentConfigName: !Ref MyDeploymentConfig
-      DeploymentStyle:
-         DeploymentOption: WITH_TRAFFIC_CONTROL
-         DeploymentType: BLUE_GREEN  # IN_PLACE 
+      # DeploymentStyle:
+      #    DeploymentOption: WITH_TRAFFIC_CONTROL
+      #    DeploymentType: BLUE_GREEN  # IN_PLACE 
       Ec2TagFilters:
         - Key: Name
           Type: KEY_ONLY 
       # LoadBalancerInfo:
       #   ElbInfoList: [ 'name']
       #   TargetGroupInfoList: ['name']
-        
       ServiceRoleArn: !GetAtt CodeDeployRole.Arn #required
       # TriggerConfigurations:
       #   - TriggerConfig
+  
+  CodeDeployFailureTopic:
+    Type: AWS::SNS::Topic
+    DependsOn: MyCodeDeployGroup
+    Properties:
+      Subscription: 
+        - Endpoint: !Ref DeleteAsgOnDeploymentFailureLambdaARN
+          Protocol: lambda
+      TopicName: !Sub ${AWS::StackName}-CodeDeployFailureTopic
+
+  DeleteAsgOnDeploymentFailureLambdaPermisson:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Principal: sns.amazoneaws.com #required
+      Action: lambda.InvokeFunction 
+      FunctionName: !Ref DeleteAsgOnDeploymentFailureLambdaARN
+      SourceArn: !Ref CodeDeployFailureTopic
   
     
   MyCodePipeline:

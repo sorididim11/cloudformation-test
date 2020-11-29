@@ -20,6 +20,14 @@ Parameters:
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
 
 Resources: 
+  VPCStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      Parameters:
+        NumberOfAZs: 2
+      TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/vpc.yml
+      TimeoutInMinutes: 30
+  
   NotificationTopic:
     Type: "AWS::SNS::Topic"
     Properties:
@@ -53,7 +61,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Enable SSH, HTTP access via port 22, 80 respectively
-      VpcId: vpc-323a8a59
+      VpcId: !GetAtt VPCStack.Outputs.VPC 
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
@@ -101,8 +109,8 @@ Resources:
           services:
             sysvinit:
               httpd:
-                enabled: false
-                ensureRunning: false
+                enabled: true
+                ensureRunning: true
               cfn-hup:
                 enabled: true
                 ensureRunning: true
@@ -115,39 +123,32 @@ Resources:
       KeyName: !Ref KeyName
       SecurityGroups: [!Ref 'WebSecurityGroup' ]
       UserData: !Base64
-        Fn::Join:
-        - ''
-        - ['#!/bin/bash -xe
+        Fn::Base64: !Sub |
+          #!/bin/bash 
 
-            ', 'sudo yum update -y aws-cfn-bootstrap
+          yum update -y aws-cfn-bootstrap
+          yum install -y ruby wget
 
-            ', 'sudo yum install -y ruby wget
+          cd /home/ec2-user
+          wget https://aws-codedeploy-ap-northeast-2.s3.ap-northeast-2.amazonaws.com/latest/install
+          chmod +x ./install
+          sudo ./install auto
 
-            ', 'cd /home/ec2-user
-
-            ', 'wget https://aws-codedeploy-ap-northeast-2.s3.ap-northeast-2.amazonaws.com/latest/install
-
-            ', 'chmod +x ./install
-
-            ', 'sudo ./install auto
-
-            ', 'sudo /opt/aws/bin/cfn-init -v ', '         --stack ', !Ref 'AWS::StackName',
-          '         --resource LaunchConfig ', '         --region ', !Ref 'AWS::Region',
-          '
-            ', 'sudo /opt/aws/bin/cfn-signal -e $? ', '         --stack ', !Ref 'AWS::StackName',
-          '         --resource WebAutoScalingGroup ', '         --region ', !Ref 'AWS::Region',
-          '
-            ']
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfig  --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource WebAutoScalingGroup --region ${AWS::Region}
+        
 
 
   WebAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn: VPCStack
     Properties:
-      AvailabilityZones: !GetAZs ''
+      #AvailabilityZones: !GetAZs ''
+      VPCZoneIdentifier: [ !GetAtt VPCStack.Outputs.PublicSubnetA, !GetAtt VPCStack.Outputs.PublicSubnetB ]
       LaunchConfigurationName: !Ref LaunchConfig
-      MaxSize: 2
-      MinSize: 1
-      LoadBalancerNames: [!Ref 'ElasticLoadBalancer']
+      MaxSize: '2'
+      MinSize: '1'
+      TargetGroupARNs: [!Ref 'DefaultRoutingTargetGroup']
       NotificationConfigurations:
         - TopicARN: !Ref 'NotificationTopic'
           NotificationTypes: ['autoscaling:EC2_INSTANCE_LAUNCH', 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR',
@@ -161,11 +162,8 @@ Resources:
         Timeout: PT15M
         Count: 1
     UpdatePolicy:
-      AutoScalingRollingUpdate:
-        MinInstancesInService: 1
-        MaxBatchSize: 1
-        PauseTime: PT15M
-        WaitOnResourceSignals: true 
+      AutoScalingReplacingUpdate:
+        WillReplace: true 
 
 
   WebServerScaleUpPolicy:
@@ -215,28 +213,49 @@ Resources:
       ComparisonOperator: LessThanThreshold
 
   ElasticLoadBalancer:
-    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
     Properties:
-      ConnectionSettings:
-        IdleTimeout: 1
-      HealthCheck:
-        HealthyThreshold: '2'
-        Interval: '15'
-        Target: TCP:80
-        Timeout: '5'
-        UnhealthyThreshold: '2'
-      Listeners:
-      - InstancePort: '80'
-        InstanceProtocol: TCP
-        LoadBalancerPort: '80'
-        Protocol: TCP
+      IpAddressType: ipv4
+      Name: !Sub ${AWS::StackName}-ELB
       Scheme: internet-facing
-      SecurityGroups:
-      - Ref: WebSecurityGroup
-      Subnets:
-      - subnet-01453a071115c7360
+      SecurityGroups: [ !Ref WebSecurityGroup ]
+      Subnets: [ !GetAtt VPCStack.Outputs.PublicSubnetA, !GetAtt VPCStack.Outputs.PublicSubnetB ]
+  
+  DefaultRoutingTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      HealthCheckPath: "/index.html"
+      Name: default-target-group
+      Port: 80
+      Protocol: HTTP
+      TargetType: instance
+      VpcId: !GetAtt VPCStack.Outputs.VPC 
+  ListenerHTTP:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      LoadBalancerArn: !Ref ElasticLoadBalancer #required
+      DefaultActions: #required
+        - Type: forward
+          ForwardConfig : 
+            TargetGroups:
+              - TargetGroupArn: !Ref 'DefaultRoutingTargetGroup'
+              # "Port": 443,
+              # "Protocol": "HTTPS",
+      Port: 80
+      Protocol: HTTP
 
+  
 Outputs:
   URL:
     Description: The URL of the website
     Value: !Join ['', ['http://', !GetAtt [ElasticLoadBalancer, DNSName]]]
+  TargetGroupName:
+    Description: ELB target group name
+    Value: !GetAtt DefaultRoutingTargetGroup.TargetGroupName
+    Export:
+      Name: !Sub ${AWS::StackName}-DefaultRoutingTargetGroup
+  WebAutoScalingGroup:
+    Description: Web Autoscaling group name
+    Value: !Ref WebAutoScalingGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-WebAutoScalingGroup

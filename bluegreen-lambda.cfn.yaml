@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters: 
+  UpdateInplaceToBlueGreenDeploymentLambdaARN:
+    Description: To handle custom Resource which invokes lambda function to UpdateInplaceToBlueGreenDeployment, lambda functions ARN is required
+    Type: String
+    Default: "arn:aws:lambda:ap-northeast-2:086403489859:function:updateInplaceToBlueGreenDeployment"
+Resources: 
+  BlueGreenLambdaFunctionCreate:
+    Type: "Custom::UpdateInplaceToBlueGreenDeployment"
+    Properties:
+      ServiceToken: !Ref UpdateInplaceToBlueGreenDeploymentLambdaARN
+      ApplicationName: !Ref CodeDeployGitHubDemo-App
+      DeploymentGroupName: !Ref CodeDeployGitHubDemo-DepGrp
+      AutoscalingGroupName: !Ref web1-WebAutoScalingGroup
+      TargetGroupName: !Ref web1-DefaultRoutingTargetGroup
+      # "UpdateInplaceToBlueGreenDeployment": {
+      # "Type": "Custom::UpdateInplaceToBlueGreenDeployment",
+      # "DependsOn": ["BlueGreenDeploymentGroup", "ASGroup", "ApplicationBlueGreen", "CodeDeployFailureTopic"],
+      # "Properties": {
+      #   "ServiceToken": {"Ref": "UpdateInplaceToBlueGreenDeploymentLambdaARN"},
+      #   "ApplicationName": {"Ref": "ApplicationBlueGreen"},
+      #   "DeploymentGroupName": {"Ref": "BlueGreenDeploymentGroup"},
+      #   "AutoscalingGroupName": {"Ref": "ASGroup"},
+      #   "TargetGroupName": {"Ref": "BlueGreenDeploymentGroup"},
+      #   "TriggerTargetArn": {"Ref": "CodeDeployFailureTopic"}
+      # }

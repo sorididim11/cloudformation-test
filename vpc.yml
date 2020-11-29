@@ -86,6 +86,8 @@ Mappings:
       AMI: ami-00e17d1165b9dd3ec    # Sydney
     ap-northeast-1:
       AMI: ami-08847abae18baa040    # Tokyo
+    ap-northeast-2:
+      AMI: ami-08847abae18baa040    # Tokyo
 
 
 Resources:

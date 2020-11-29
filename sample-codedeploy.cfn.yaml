@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters: 
+  DeleteAsgOnDeploymentFailureLambdaARN:
+    Description: To handle custom Resource which invokes lambda function to DeleteAsgOnDeploymentFailure, lambda functions ARN is required
+    Type: String
+    Default: arn:aws:lambda:ap-northeast-2:086403489859:function:DeleteAsgOnDeploymentFailureLambda
+
+Resources: 
+  CodeDeployFailureTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription: 
+        - Endpoint: !Ref DeleteAsgOnDeploymentFailureLambdaARN
+          Protocol: lambda
+      TopicName: !Sub ${AWS::StackName}-CodeDeployFailureTopic
+
+  DeleteAsgOnDeploymentFailureLambdaPermisson:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Principal: "sns.amazonaws.com" #required
+      Action: "lambda:InvokeFunction"
+      FunctionName: !Ref DeleteAsgOnDeploymentFailureLambdaARN
+      SourceArn: !Ref CodeDeployFailureTopic
+
+
