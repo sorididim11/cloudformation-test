@@ -25,7 +25,7 @@ Resources:
     Properties:
       Parameters:
         NumberOfAZs: 2
-      TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/vpc.yml
+      TemplateURL: vpc.yml
       TimeoutInMinutes: 30
   
   NotificationTopic:
