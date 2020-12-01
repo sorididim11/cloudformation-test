@@ -261,8 +261,8 @@ Resources:
                 - 'cloudformation:SetStackPolicy'
                 - 'iam:PassRole'
                 #- 'sns:Publish'
-                - iam:*
-                - sns:*
+                - 'iam:*'
+                - 'sns:*'
                 - 'codestar-connections:UseConnection'
                 - "cloudtrail:CreateTrail"
                 - "cloudtrail:DescribeTrails"
