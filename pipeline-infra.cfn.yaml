@@ -217,6 +217,7 @@ Resources:
             Statement:
               - Action:
                   - 'ec2:*'
+                  - 'sns:*'
                 Effect: Allow
                 Resource: '*'
               
