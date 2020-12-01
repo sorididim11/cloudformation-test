@@ -77,6 +77,7 @@ Metadata:
 Resources:
   ArtifactStoreBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       VersioningConfiguration:
         Status: Enabled
@@ -104,7 +105,7 @@ Resources:
       Name: !Ref 'PipelineName'
       RoleArn: !GetAtt [PipelineRole, Arn]
       Stages:
-        - Name: Github Source
+        - Name: GithubSource
           Actions:
             - Name: TemplateSource
               ActionTypeId:
@@ -229,6 +230,14 @@ Resources:
                   - "iam:AddRoleToInstanceProfile"
                   - "iam:RemoveRoleFromInstanceProfile"
                   - "iam:PassRole"
+                  - "autoscaling:*"
+                  - "ec2:DescribeInstances"
+                  - "ec2:DescribeInstanceStatus"
+                  - "ec2:TerminateInstances"
+                  - "cloudwatch:DescribeAlarms"
+                  - "cloudwatch:DeleteAlarms"
+                  - "cloudwatch:PutMetricAlarm"
+                  - "elasticloadbalancing:*"
                 Effect: Allow
                 Resource: '*'
               
