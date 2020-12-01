@@ -172,6 +172,7 @@ Resources:
                 ActionMode: CHANGE_SET_REPLACE
                 RoleArn: !GetAtt [CFNRole, Arn]
                 StackName: !Ref ProdStackName
+                Capabilities: CAPABILITY_IAM
                 ChangeSetName: !Ref ChangeSetName
                 TemplateConfiguration: !Sub "TemplateSource::${ProdStackConfig}"
                 TemplatePath: !Sub "TemplateSource::${TemplateFileName}"
@@ -195,7 +196,6 @@ Resources:
               Configuration:
                 ActionMode: CHANGE_SET_EXECUTE
                 ChangeSetName: !Ref ChangeSetName
-                Capabilities: CAPABILITY_IAM
                 RoleArn: !GetAtt [CFNRole, Arn]
                 StackName: !Ref ProdStackName
               RunOrder: 3
