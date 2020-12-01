@@ -218,6 +218,16 @@ Resources:
               - Action:
                   - 'ec2:*'
                   - 'sns:*'
+                  - "iam:CreateInstanceProfile"
+                  - "iam:DeleteInstanceProfile"
+                  - "iam:DetachRolePolicy"
+                  - "iam:RemoveRoleFromInstanceProfile"
+                  - "iam:ListRoles"
+                  - "iam:CreateRole"
+                  - "iam:DeleteRole"
+                  - "iam:AttachRolePolicy"
+                  - "iam:AddRoleToInstanceProfile"
+                  - "iam:PassRole"
                 Effect: Allow
                 Resource: '*'
               
