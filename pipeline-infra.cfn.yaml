@@ -247,5 +247,7 @@ Resources:
                 - 'cloudformation:SetStackPolicy'
                 - 'iam:PassRole'
                 - 'sns:Publish'
+                - 'codestar-connections:UseConnection'
+                Resource: "*"
                 Effect: Allow
                 Resource: '*'
