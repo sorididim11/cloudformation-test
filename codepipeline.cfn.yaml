@@ -17,8 +17,6 @@ Parameters:
     Description: The git branch that will be polled for changes
     Type: String
     Default: "main"
-
-
   GithubFullRepo:
     Description: The git repository base name
     Type: String
@@ -42,10 +40,10 @@ Resources:
     Type: AWS::S3::Bucket # it seems that there is no way to delete non-empty bucket so keep it or 'aws s3 rm s3://<buceket nanem> --recursive'
     DeletionPolicy: Retain
 
-  MyGithubConnection:
+  GithubConnection:
     Type: "AWS::CodeStarConnections::Connection"
     Properties:
-      ConnectionName: MyGithubConnection 
+      ConnectionName: GithubConnection 
       ProviderType: GitHub
   
   CodeDeployRole:
@@ -248,7 +246,7 @@ Resources:
             Provider: CodeStarSourceConnection
             Version: '1'
           Configuration:
-            ConnectionArn: !Ref MyGithubConnection
+            ConnectionArn: !Ref GithubConnection
             FullRepositoryId: !Ref GithubFullRepo
             BranchName: !Ref GithubRepoBranch
           OutputArtifacts:
