@@ -260,9 +260,7 @@ Resources:
                 - 'cloudformation:DescribeChangeSet'
                 - 'cloudformation:SetStackPolicy'
                 - 'iam:PassRole'
-                #- 'sns:Publish'
-                - 'iam:*'
-                - 'sns:*'
+                - 'sns:Publish'
                 - 'codestar-connections:UseConnection'
                 - "cloudtrail:CreateTrail"
                 - "cloudtrail:DescribeTrails"
