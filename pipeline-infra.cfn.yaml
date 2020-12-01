@@ -216,17 +216,17 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Action:
-                  - 'ec2:*'
-                  - 'sns:*'
+                  - ec2:*
+                  - sns:*
                   - "iam:CreateInstanceProfile"
                   - "iam:DeleteInstanceProfile"
+                  - "iam:AttachRolePolicy"
                   - "iam:DetachRolePolicy"
-                  - "iam:RemoveRoleFromInstanceProfile"
                   - "iam:ListRoles"
                   - "iam:CreateRole"
                   - "iam:DeleteRole"
-                  - "iam:AttachRolePolicy"
                   - "iam:AddRoleToInstanceProfile"
+                  - "iam:RemoveRoleFromInstanceProfile"
                   - "iam:PassRole"
                 Effect: Allow
                 Resource: '*'
