@@ -24,7 +24,7 @@ Resources:
     Type: "AWS::CloudFormation::Stack"
     Properties:
       Parameters:
-        NumberOfAZs: 2
+        NumberOfAZs: 1
       TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/vpc.yml
       TimeoutInMinutes: 30
   
