@@ -264,4 +264,3 @@ Resources:
                 - 'codestar-connections:UseConnection'
                 Resource: "*"
                 Effect: Allow
-                Resource: '*'
