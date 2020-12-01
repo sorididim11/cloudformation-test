@@ -250,7 +250,6 @@ Resources:
             Statement:
               - Action:
                 - 's3:*'
-                - iam:*
                 - 'cloudformation:CreateStack'
                 - 'cloudformation:DescribeStacks'
                 - 'cloudformation:DeleteStack'
@@ -261,7 +260,9 @@ Resources:
                 - 'cloudformation:DescribeChangeSet'
                 - 'cloudformation:SetStackPolicy'
                 - 'iam:PassRole'
-                - 'sns:Publish'
+                #- 'sns:Publish'
+                - iam:*
+                - sns:*
                 - 'codestar-connections:UseConnection'
                 - "cloudtrail:CreateTrail"
                 - "cloudtrail:DescribeTrails"
