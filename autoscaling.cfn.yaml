@@ -18,13 +18,20 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
     Default: general
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  NumberOfAZs:
+    Type: Number
+    AllowedValues: 
+    - 2
+    - 3
+    Default: 1
+    Description:  How many Availability Zones do you wish to utilize?
 
 Resources: 
   VPCStack:
     Type: "AWS::CloudFormation::Stack"
     Properties:
       Parameters:
-        NumberOfAZs: 1
+        NumberOfAZs: !Ref NumberOfAZs
       TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/vpc.yml
       TimeoutInMinutes: 30
   
@@ -70,6 +77,10 @@ Resources:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
           CidrIp: 0.0.0.0/0
 
   LaunchConfig:
@@ -141,7 +152,6 @@ Resources:
 
   WebAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
-    DependsOn: VPCStack
     Properties:
       #AvailabilityZones: !GetAZs ''
       VPCZoneIdentifier: [ !GetAtt VPCStack.Outputs.PublicSubnetA, !GetAtt VPCStack.Outputs.PublicSubnetB ]
