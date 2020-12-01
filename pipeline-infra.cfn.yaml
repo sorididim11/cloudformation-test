@@ -218,6 +218,7 @@ Resources:
               - Action:
                   - ec2:*
                   - sns:*
+                  - s3:*
                   - "iam:CreateInstanceProfile"
                   - "iam:DeleteInstanceProfile"
                   - "iam:AttachRolePolicy"
