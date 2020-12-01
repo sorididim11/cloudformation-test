@@ -23,8 +23,8 @@ Parameters:
     AllowedValues: 
     - 2
     - 3
-    Default: 1
-    Description:  How many Availability Zones do you wish to utilize?
+    Default: 2
+    Description:  How many Availability Zones do you wish to utilize? (minimum is two because of LoadBalancer)
 
 Resources: 
   VPCStack:
