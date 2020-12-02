@@ -152,12 +152,11 @@ Resources:
 
           cd /var/www/html
           echo "<html>
-          <body><H1>Welcome to your EC2 Instance</H1><p><p>" > ./index.html
-          echo "There are many other instances, but" >> ./index.html
-          echo "<strong>$ID</strong> is yours.<p><p>" >> ./index.html
-          echo "This is a <strong>$TYPE</strong> instance" >> ./index.html
+          <body><H1>I 'm  your EC2 Instance</H1><p><p>" > ./index.html
+          echo "My Instance ID is <strong>$ID</strong>" >> ./index.html
           echo " in <strong>$AZ</strong>. <p><p>" >> ./index.html
-          echo "The public IP is <strong>$IPV4</strong>.<p><p>" >> ./index.html
+          echo "My Instance Type is <strong>$TYPE</strong> <p><p>" >> ./index.html
+          echo "My public IP is <strong>$IPV4</strong>.<p><p>" >> ./index.html
           echo "</body></html>" >> ./index.html
 
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource WebAutoScalingGroup --region ${AWS::Region}
