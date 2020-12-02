@@ -146,7 +146,7 @@ Resources:
           TYPE=$(curl 169.254.169.254/latest/meta-data/instance-type)
           AZ=$(curl 169.254.169.254/latest/meta-data/placement/availability-zone)
           IPV4=$(curl -f 169.254.169.254/latest/meta-data/public-ipv4)
-          
+
           "# Install the files and packages from the metadata\n",
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfig  --region ${AWS::Region}
 
@@ -247,7 +247,7 @@ Resources:
     Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
     Properties:
       HealthCheckPath: "/index.html"
-      Name: default-target-group
+      Name: !Sub ${AWS::StackName}-default-target-group
       Port: 80
       Protocol: HTTP
       TargetType: instance
