@@ -27,7 +27,7 @@ Parameters:
     Description: The file name of the VPC + autoscaling template
     Type: String
   TestStackName:
-    Default: Test-autoscaling
+    Default: Test-web1
     Description: A name for the test WordPress stack
     Type: String
   TestStackConfig:
@@ -35,7 +35,7 @@ Parameters:
     Description: The configuration file name for the test WordPress stack
     Type: String
   ProdStackName:
-    Default: Prod-autoscaling
+    Default: Prod-web1
     Description: A name for the production VPC +autoscaling  stack
     Type: String
   ProdStackConfig:
