@@ -146,7 +146,9 @@ Resources:
           TYPE=$(curl 169.254.169.254/latest/meta-data/instance-type)
           AZ=$(curl 169.254.169.254/latest/meta-data/placement/availability-zone)
           IPV4=$(curl -f 169.254.169.254/latest/meta-data/public-ipv4)
-          
+
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfig  --region ${AWS::Region}
+
           cd /var/www/html
           echo "<html>
           <body><H1>Welcome to your EC2 Instance</H1><p><p>" > ./index.html
@@ -157,7 +159,6 @@ Resources:
           echo "The public IP is <strong>$IPV4</strong>.<p><p>" >> ./index.html
           echo "</body></html>" >> ./index.html
 
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfig  --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource WebAutoScalingGroup --region ${AWS::Region}
 
   WebAutoScalingGroup:
