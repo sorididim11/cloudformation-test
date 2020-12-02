@@ -141,10 +141,24 @@ Resources:
           chmod +x ./install
           sudo ./install auto
 
+          # Discover configuration using the EC2 metadata service
+          ID=$(curl 169.254.169.254/latest/meta-data/instance-id)
+          TYPE=$(curl 169.254.169.254/latest/meta-data/instance-type)
+          AZ=$(curl 169.254.169.254/latest/meta-data/placement/availability-zone)
+          IPV4=$(curl -f 169.254.169.254/latest/meta-data/public-ipv4)
+          
+          cd /var/www/html
+          echo "<html>
+          <body><H1>Welcome to your EC2 Instance</H1><p><p>" > ./index.html
+          echo "There are many other instances, but" >> ./index.html
+          echo "<strong>$ID</strong> is yours.<p><p>" >> ./index.html
+          echo "This is a <strong>$TYPE</strong> instance" >> ./index.html
+          echo " in <strong>$AZ</strong>. <p><p>" >> ./index.html
+          echo "The public IP is <strong>$IPV4</strong>.<p><p>" >> ./index.html
+          echo "</body></html>" >> ./index.html
+
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfig  --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource WebAutoScalingGroup --region ${AWS::Region}
-        
-
 
   WebAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup

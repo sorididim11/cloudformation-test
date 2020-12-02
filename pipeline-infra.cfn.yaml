@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: 2010-09-09
 
 Description: >
   AWS CloudFormation Sample Template Continuous Delievery: This template
@@ -220,6 +220,7 @@ Resources:
                   - ec2:*
                   - sns:*
                   - s3:*
+                  - iam:CreateServiceLinkedRole
                   - "iam:CreateInstanceProfile"
                   - "iam:DeleteInstanceProfile"
                   - "iam:AttachRolePolicy"
