@@ -247,7 +247,7 @@ Resources:
     Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
     Properties:
       HealthCheckPath: "/index.html"
-      Name: !Sub ${AWS::StackName}-default-target-group
+      Name: !Sub ${AWS::StackName}-default-TG
       Port: 80
       Protocol: HTTP
       TargetType: instance
