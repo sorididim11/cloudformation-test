@@ -1,8 +1,9 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {}
-}aws codestar-connections create-connection --provider-type GitHub --connection-name MyConnection
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+	"settings": {
+    }
+}

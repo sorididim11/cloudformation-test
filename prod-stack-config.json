@@ -1,5 +1,8 @@
 {
+
     "Parameters" : {
+      "InstanceType": "t2.micro",
+      "KeyName": "general",
       "NumberOfAZs" : "3"
     }
-  }  
+}  
