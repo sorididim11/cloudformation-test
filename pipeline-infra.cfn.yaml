@@ -17,7 +17,7 @@ Parameters:
     Type: String
     Default: "sorididim11/cloudformation-test"
   TemplateFileName:
-    Default: autoscaling.cfn.yaml
+    Default: web.cfn.yaml
     Description: The file name of the VPC + autoscaling template
     Type: String
   TestStackName:
@@ -84,7 +84,7 @@ Resources:
           Protocol: email
 
   GithubConnection:
-    Type: "AWS::CodeStarConnections::Connection"
+    Type: AWS::CodeStarConnections::Connection
     Properties:
       ConnectionName: GithubConnection
       ProviderType: GitHub

@@ -13,6 +13,7 @@ Metadata:
       - Label: 
           default: "Network Configuration"
         Parameters: 
+          - EnvType
           - NumberOfAZs
           - PrivateSubnets
           - UseNAT
@@ -33,7 +34,7 @@ Parameters:
     - 1
     - 2
     - 3
-    Default: 1
+    Default: 3
     Description:  How many Availability Zones do you wish to utilize?
   
   UseNAT: 
@@ -51,6 +52,15 @@ Parameters:
     - "NAT Gateway"
     Default:  "NAT Gateway"
     Description:  What type of NAT to use for private instances to communicate with the internet.  A single EC2 instance can be used as a NAT, or you can use the AWS NAT Gateway (managed, scalable, more expensive).  This setting will be IGNORED if you do not build private subnets.
+ 
+  EnvType:
+    Type: String
+    AllowedValues:
+    - dev
+    - test
+    - prod
+    Default:  dev
+    Description: enviornment type 
 
 Conditions:
   BuildPublicB:         !Not [ !Equals [ !Ref NumberOfAZs, 1 ]]
@@ -102,6 +112,8 @@ Resources:
       Tags:
       - Key: Name
         Value: !Sub ${AWS::StackName}-VPC
+      - Key: enviornment
+        Value: !Ref EnvType
         
   # Our VPC will need internet access:      
   InternetGateway:
@@ -123,7 +135,12 @@ Resources:
       AvailabilityZone: !Select [ 0, !GetAZs ]    # Get the first AZ in the list        
       Tags:
       - Key: Name
-        Value: !Sub ${AWS::StackName}-Public-A
+        Value: !Sub 
+            - ${AWS::StackName}-elb-publilc-${az}
+            - { az: !Select [ 0, !GetAZs ] }
+      - Key: enviornment
+        Value: !Ref EnvType
+
   PublicSubnetB:
     Type: AWS::EC2::Subnet
     Condition: BuildPublicB
@@ -133,7 +150,12 @@ Resources:
       AvailabilityZone: !Select [ 1, !GetAZs ]    # Get the second AZ in the list  
       Tags:
       - Key: Name
-        Value: !Sub ${AWS::StackName}-Public-B
+        Value: !Sub 
+            - ${AWS::StackName}-elb-publilc-${az}
+            - { az: !Select [ 1, !GetAZs ] }
+      - Key: enviornment
+        Value: !Ref EnvType
+
   PublicSubnetC:
     Type: AWS::EC2::Subnet
     Condition: BuildPublicC
@@ -143,7 +165,12 @@ Resources:
       AvailabilityZone: !Select [ 2, !GetAZs ]    # Get the third AZ in the list  
       Tags:
       - Key: Name
-        Value: !Sub ${AWS::StackName}-Public-C
+        Value: !Sub 
+            - ${AWS::StackName}-elb-publilc-${az}
+            - { az: !Select [ 2, !GetAZs ] }
+      - Key: enviornment
+        Value: !Ref EnvType
+
   PrivateSubnetA:
     Type: AWS::EC2::Subnet
     Condition: BuildPrivateA
@@ -153,7 +180,12 @@ Resources:
       AvailabilityZone: !Select [ 0, !GetAZs ]    # Get the first AZ in the list  
       Tags:
       - Key: Name
-        Value: !Sub ${AWS::StackName}-Private-A
+        Value: !Sub 
+            - ${AWS::StackName}-web-private-${az}
+            - { az: !Select [ 0, !GetAZs ] }
+      - Key: enviornment
+        Value: !Ref EnvType
+
   PrivateSubnetB:
     Type: AWS::EC2::Subnet
     Condition: BuildPrivateB
@@ -163,7 +195,12 @@ Resources:
       AvailabilityZone: !Select [ 1, !GetAZs ]    # Get the second AZ in the list  
       Tags:
       - Key: Name
-        Value: !Sub ${AWS::StackName}-Private-B
+        Value: !Sub 
+            - ${AWS::StackName}-db-private-${az}
+            - { az: !Select [ 1, !GetAZs ] }
+      - Key: enviornment
+        Value: !Ref EnvType
+
   PrivateSubnetC:
     Type: AWS::EC2::Subnet
     Condition: BuildPrivateC
@@ -173,8 +210,12 @@ Resources:
       AvailabilityZone: !Select [ 2, !GetAZs ]    # Get the third AZ in the list  
       Tags:
       - Key: Name
-        Value: !Sub ${AWS::StackName}-Private-C
-        
+        Value: !Sub 
+            - ${AWS::StackName}-db-private-${az}
+            - { az: !Select [ 2, !GetAZs ] }
+      - Key: enviornment
+        Value: !Ref EnvType
+
   # Some route tables for our subnets:        
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -182,7 +223,9 @@ Resources:
       VpcId: !Ref VPC
       Tags:
       - Key: Name
-        Value: Public
+        Value: !Sub 
+            - ${AWS::StackName}-public-rt
+            - { az: !Select [ 2, !GetAZs ] }
   PublicRoute1:   # Public route table has direct routing to IGW:
     Type: AWS::EC2::Route
     DependsOn: AttachGateway
@@ -199,7 +242,12 @@ Resources:
       VpcId: !Ref VPC
       Tags:
       - Key: Name
-        Value: Private
+        Value: !Sub 
+            - ${AWS::StackName}-private-rt
+            - { az: !Select [ 2, !GetAZs ] }
+      - Key: enviornment
+        Value: !Ref EnvType
+
   PrivateRoute1:            # Private route table can access web via NAT (created below)
     Type: AWS::EC2::Route
     Condition: BuildNAT
@@ -292,7 +340,9 @@ Resources:
       SourceDestCheck: false                                          # NATs don't work if EC2 tries the match source addresses with destinations.
       Tags:
       - Key: Name
-        Value: !Sub NAT-${AWS::StackName}
+        Value: !Sub ${AWS::StackName}-nat
+      - Key: enviornment
+        Value: !Ref EnvType
       UserData:      #  This code is NAT code.  Look at how the last line signals the wait condition:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -323,28 +373,16 @@ Resources:
       SubnetId: !Ref PublicSubnetA
       Tags: 
       - Key: Name
-        Value: !Sub NAT-${AWS::StackName}
+        Value: !Sub ${AWS::StackName}-nat
+      - Key: enviornment
+        Value: !Ref EnvType
+
   ElasticIPAddress:
     Type: AWS::EC2::EIP
     Condition: BuildNATGateway
     Properties:
       Domain: vpc
   
-  WebSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: Enable SSH access via port 22
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-
 
 Outputs:
   VPC:
@@ -387,8 +425,3 @@ Outputs:
     Value: !Ref PrivateSubnetC
     Export:
       Name: !Sub ${AWS::StackName}-PrivateSubnetC
-  WebSecurityGroup:
-    Description: Open ssh, HTTP ports
-    Value: !GetAtt WebSecurityGroup.GroupId
-    Export:
-      Name: !Sub ${AWS::StackName}-WebSecurityGroupID

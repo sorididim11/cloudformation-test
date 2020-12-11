@@ -13,28 +13,26 @@ Parameters:
     Default: sorididim11@gmail.com
     AllowedPattern: ([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)
     ConstraintDescription: must be a valid email address.
+  WebVPC:
+    Description: VPC where to put autoscaling relasted resources in 
+    Type: AWS::EC2::VPC::Id
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  PublicSubnetA:
+    Description: public subnet ELB located in 
+    Type: AWS::EC2::Subnet::Id
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.    
+  PublicSubnetB:
+    Description: ublic subnet ELB located in 
+    Type: AWS::EC2::Subnet::Id
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
   KeyName:
     Description: The EC2 Key Pair to allow SSH access to the instances
     Type: AWS::EC2::KeyPair::KeyName
     Default: general
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
-  NumberOfAZs:
-    Type: Number
-    AllowedValues: 
-    - 2
-    - 3
-    Default: 2
-    Description:  How many Availability Zones do you wish to utilize? (minimum is two because of LoadBalancer)
 
-Resources: 
-  VPCStack:
-    Type: "AWS::CloudFormation::Stack"
-    Properties:
-      Parameters:
-        NumberOfAZs: !Ref NumberOfAZs
-      TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/vpc.yml
-      TimeoutInMinutes: 30
-  
+
+Resources:   
   NotificationTopic:
     Type: "AWS::SNS::Topic"
     Properties:
@@ -68,7 +66,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Enable SSH, HTTP access via port 22, 80 respectively
-      VpcId: !GetAtt VPCStack.Outputs.VPC 
+      VpcId: !Ref WebVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
@@ -165,7 +163,7 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       #AvailabilityZones: !GetAZs ''
-      VPCZoneIdentifier: [ !GetAtt VPCStack.Outputs.PublicSubnetA, !GetAtt VPCStack.Outputs.PublicSubnetB ]
+      VPCZoneIdentifier: [ !Ref PublicSubnetA, !Ref PublicSubnetB ]
       LaunchConfigurationName: !Ref LaunchConfig
       MaxSize: '2'
       MinSize: '1'
@@ -191,14 +189,14 @@ Resources:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AdjustmentType: ChangeInCapacity
-      AutoScalingGroupName: !Ref 'WebAutoScalingGroup'
+      AutoScalingGroupName: !Ref WebAutoScalingGroup
       Cooldown: '60'
       ScalingAdjustment: 1
   WebServerScaleDownPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AdjustmentType: ChangeInCapacity
-      AutoScalingGroupName: !Ref 'WebAutoScalingGroup'
+      AutoScalingGroupName: !Ref WebAutoScalingGroup
       Cooldown: '60'
       ScalingAdjustment: -1
       
@@ -212,10 +210,10 @@ Resources:
       Period: 300
       EvaluationPeriods: 2
       Threshold: 90
-      AlarmActions: [!Ref 'WebServerScaleUpPolicy']
+      AlarmActions: [!Ref WebServerScaleUpPolicy ]
       Dimensions:
       - Name: AutoScalingGroupName
-        Value: !Ref 'WebAutoScalingGroup'
+        Value: !Ref WebAutoScalingGroup
       ComparisonOperator: GreaterThanThreshold
   CPUAlarmLow:
     Type: AWS::CloudWatch::Alarm
@@ -240,8 +238,8 @@ Resources:
       Name: !Sub ${AWS::StackName}-ELB
       Scheme: internet-facing
       SecurityGroups: [ !Ref WebSecurityGroup ]
-      Subnets: [ !GetAtt VPCStack.Outputs.PublicSubnetA, !GetAtt VPCStack.Outputs.PublicSubnetB ]
-  
+      Subnets: [ !Ref PublicSubnetA, !Ref PublicSubnetB ]
+
   DefaultRoutingTargetGroup:
     Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
     Properties:
@@ -250,7 +248,8 @@ Resources:
       Port: 80
       Protocol: HTTP
       TargetType: instance
-      VpcId: !GetAtt VPCStack.Outputs.VPC 
+      VpcId: !Ref WebVPC
+      
   ListenerHTTP:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
