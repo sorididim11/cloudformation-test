@@ -51,9 +51,9 @@ Resources:
     Type: "AWS::CloudFormation::Stack"
     Properties:
       Parameters:
-        WebVPC:  !GetAtt VPCStack.Outputs.VPC
-        PublicSubnetA: !GetAtt VPCStack.Outputs.PublicSubnetA
-        PublicSubnetB: !GetAtt VPCStack.Outputs.PublicSubnetB
+        WebVPC:  !GetAtt VPC.Outputs.VPC
+        PublicSubnetA: !GetAtt VPC.Outputs.PublicSubnetA
+        PublicSubnetB: !GetAtt VPC.Outputs.PublicSubnetB
         EnvType: !Ref EnvType
       TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/autoscaling.cfn.yaml
       TimeoutInMinutes: 30
