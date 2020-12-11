@@ -30,7 +30,14 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
     Default: general
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
-
+  EnvType:
+    Type: String
+    AllowedValues:
+    - dev
+    - test
+    - prod
+    Default:  dev
+    Description: enviornment type 
 
 Resources:   
   NotificationTopic:
