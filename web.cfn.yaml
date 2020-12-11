@@ -39,7 +39,7 @@ Parameters:
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
 
 Resources: 
-  VPCStack:
+  VPC:
     Type: "AWS::CloudFormation::Stack"
     Properties:
       Parameters:
@@ -47,7 +47,7 @@ Resources:
         EnvType: !Ref EnvType
       TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/vpc.yml
       TimeoutInMinutes: 30
-  ScalingCF:
+  ASG:
     Type: "AWS::CloudFormation::Stack"
     Properties:
       Parameters:
