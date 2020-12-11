@@ -9,7 +9,15 @@ Parameters:
     - 3
     Default: 2
     Description:  How many Availability Zones do you wish to utilize?
-  
+  EnvType:
+    Type: String
+    AllowedValues:
+    - dev
+    - test
+    - prod
+    Default:  dev
+    Description: enviornment type 
+
   UseNAT: 
     Description: Whether to use NAT device or not
     Type: String
@@ -36,6 +44,7 @@ Resources:
     Properties:
       Parameters:
         NumberOfAZs: !Ref NumberOfAZs
+        EnvType: !Ref EnvType
       TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/vpc.yml
       TimeoutInMinutes: 30
   AutoscalingStack:
@@ -45,7 +54,7 @@ Resources:
         WebVPC:  !GetAtt VPCStack.Outputs.VPC
         PublicSubnetA: !GetAtt VPCStack.Outputs.PublicSubnetA
         PublicSubnetB: !GetAtt VPCStack.Outputs.PublicSubnetB
-        KeyName: !Ref KeyName
+        EnvType: !Ref EnvType
       TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/autoscaling.cfn.yaml
       TimeoutInMinutes: 30
     

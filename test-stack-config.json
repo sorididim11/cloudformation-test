@@ -2,6 +2,7 @@
   "Parameters" : {
     "InstanceType": "t2.micro",
     "KeyName": "general",
-    "NumberOfAZs" : "2"
+    "NumberOfAZs" : "2",
+    "EnvType": "test"
   }
 }  

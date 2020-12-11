@@ -3,6 +3,7 @@
     "Parameters" : {
       "InstanceType": "t2.micro",
       "KeyName": "general",
-      "NumberOfAZs" : "3"
+      "NumberOfAZs" : "3",
+      "EnvType": "prod"
     }
 }  
