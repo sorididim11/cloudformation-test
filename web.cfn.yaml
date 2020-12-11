@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters: 
+  NumberOfAZs:
+    Type: Number
+    AllowedValues: 
+    - 1
+    - 2
+    - 3
+    Default: 2
+    Description:  How many Availability Zones do you wish to utilize?
+  
+  UseNAT: 
+    Description: Whether to use NAT device or not
+    Type: String
+    AllowedValues:
+    - True
+    - False
+    Default: False
+
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro]
+    ConstraintDescription: must be a valid EC2 instance type.
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: general
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+Resources: 
+  VPCStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      Parameters:
+        NumberOfAZs: !Ref NumberOfAZs
+      TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/vpc.yml
+      TimeoutInMinutes: 30
+  AutoscalingStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      Parameters:
+        WebVPC:  !GetAtt VPCStack.Outputs.VPC
+        PublicSubnetA: !GetAtt VPCStack.Outputs.PublicSubnetA
+        PublicSubnetB: !GetAtt VPCStack.Outputs.PublicSubnetB
+        KeyName: !Ref KeyName
+      TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/autoscaling.cfn.yaml
+      TimeoutInMinutes: 30
+    
