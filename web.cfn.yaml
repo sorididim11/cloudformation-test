@@ -47,7 +47,7 @@ Resources:
         EnvType: !Ref EnvType
       TemplateURL: https://kin-cft-bucket.s3.ap-northeast-2.amazonaws.com/vpc.yml
       TimeoutInMinutes: 30
-  AutoscalingStack:
+  ScalingCF:
     Type: "AWS::CloudFormation::Stack"
     Properties:
       Parameters:
