@@ -84,6 +84,13 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
+      Tags:
+      - Key: Name
+        Value: !Sub ${AWS::StackName}-SG
+      - Key: enviornment
+        Value: !Ref EnvType
+
+
 
   LaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
@@ -181,9 +188,12 @@ Resources:
           NotificationTypes: ['autoscaling:EC2_INSTANCE_LAUNCH', 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR',
             'autoscaling:EC2_INSTANCE_TERMINATE', 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR']   
       Tags:
-        - Key: Name
-          Value: value
-          PropagateAtLaunch: True
+      - Key: Name
+        Value: !Sub ${AWS::StackName}-EC2
+        PropagateAtLaunch: True
+      - Key: enviornment
+        Value: !Ref EnvType
+        PropagateAtLaunch: True
     CreationPolicy: # 해당 리소스가 만들어지고 클라우드포메이션에 complete 시그널을 보내기전에 시간을 delay 시킴. 리소스을 보내기 위해cfn-signa helper script 를 이용 즉 스택 생성 과정에 소프트웨어 설치 등 작업이 필요할때 스택 생성 과정을 해당 과정을 지나치지 말고 기다리라는 뜻
       ResourceSignal:
         Timeout: PT15M
@@ -191,6 +201,7 @@ Resources:
     UpdatePolicy:
       AutoScalingReplacingUpdate:
         WillReplace: true 
+
 
 
   WebServerScaleUpPolicy:
