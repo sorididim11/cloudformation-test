@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kin-nginx-lb
+spec:
+  selector:
+    app: kin-nginx
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      nodePort: 30007
+    - name: https
+      port: 443
+      targetPort: 443
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kin-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kin-nginx
+  template:
+    metadata:
+      labels:
+        app: kin-nginx
+    spec:
+      containers:
+      - name: kin-nginx
+        image: nginx
+        ports:
+        - name: http
+          containerPort: 80
+        - name: https
+          containerPort: 443
+
