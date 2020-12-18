@@ -44,6 +44,18 @@ Parameters:
     Description: The email address where CodePipeline sends pipeline notifications
     Type: String
     Default: sorididim11@gmail.com
+  TeamName:
+    Type: String
+    Default: cloudops
+    Description: team name or Org name
+  EnvType:
+    Type: String
+    AllowedValues:
+    - dev
+    - test
+    - prod
+    Default:  dev
+    Description: enviornment type 
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -75,6 +87,11 @@ Resources:
     Properties:
       VersioningConfiguration:
         Status: Enabled
+      Tags:
+      - Key: Name
+        Value: !Sub ${TeamName}-{EnvType}-pipe-bucket
+      - Key: enviornment
+        Value: !Ref EnvType
 
   CodePipelineSNSTopic:
     Type: AWS::SNS::Topic
@@ -82,13 +99,21 @@ Resources:
       Subscription:
         - Endpoint: !Ref Email
           Protocol: email
-
+      Tags:
+      - Key: Name
+        Value: !Sub ${TeamName}-codepipe-email-sns-topic
+      - Key: enviornment
+        Value: !Ref EnvType
   GithubConnection:
     Type: AWS::CodeStarConnections::Connection
     Properties:
       ConnectionName: GithubConnection
       ProviderType: GitHub
-
+      Tags:
+      - Key: Name
+        Value: !Sub ${TeamName}-{EnvType}-git-conn
+      - Key: enviornment
+        Value: !Ref EnvType
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -194,6 +219,12 @@ Resources:
                 RoleArn: !GetAtt [CFNRole, Arn]
                 StackName: !Ref ProdStackName
               RunOrder: 3
+      Tags:
+      - Key: Name
+        Value: !Sub ${TeamName}-{EnvType}-pipeline
+      - Key: enviornment
+        Value: !Ref EnvType
+
   CFNRole:
     Type: AWS::IAM::Role
     Properties:
@@ -235,7 +266,11 @@ Resources:
                   - "elasticloadbalancing:*"
                 Effect: Allow
                 Resource: "*"
-
+      Tags:
+      - Key: Name
+        Value: !Sub ${TeamName}-ec2-iam-role
+      - Key: enviornment
+        Value: !Ref EnvType
   PipelineRole:
     Type: AWS::IAM::Role
     Properties:
@@ -273,3 +308,8 @@ Resources:
                   - "cloudtrail:StartLogging"
                 Resource: "*"
                 Effect: Allow
+      Tags:
+      - Key: Name
+        Value: !Sub ${TeamName}-cfs-iam-role
+      - Key: enviornment
+        Value: !Ref EnvType
