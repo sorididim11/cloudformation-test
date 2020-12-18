@@ -48,14 +48,7 @@ Parameters:
     Type: String
     Default: cloudops
     Description: team name or Org name
-  EnvType:
-    Type: String
-    AllowedValues:
-    - dev
-    - test
-    - prod
-    Default:  dev
-    Description: enviornment type 
+
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -89,9 +82,7 @@ Resources:
         Status: Enabled
       Tags:
       - Key: Name
-        Value: !Sub ${TeamName}-{EnvType}-pipe-bucket
-      - Key: enviornment
-        Value: !Ref EnvType
+        Value: !Sub ${TeamName}-pipeline-bucket
 
   CodePipelineSNSTopic:
     Type: AWS::SNS::Topic
@@ -102,8 +93,7 @@ Resources:
       Tags:
       - Key: Name
         Value: !Sub ${TeamName}-codepipe-email-sns-topic
-      - Key: enviornment
-        Value: !Ref EnvType
+
   GithubConnection:
     Type: AWS::CodeStarConnections::Connection
     Properties:
@@ -111,9 +101,8 @@ Resources:
       ProviderType: GitHub
       Tags:
       - Key: Name
-        Value: !Sub ${TeamName}-{EnvType}-git-conn
-      - Key: enviornment
-        Value: !Ref EnvType
+        Value: !Sub ${TeamName}-git-conn
+
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -221,9 +210,8 @@ Resources:
               RunOrder: 3
       Tags:
       - Key: Name
-        Value: !Sub ${TeamName}-{EnvType}-pipeline
-      - Key: enviornment
-        Value: !Ref EnvType
+        Value: !Sub ${TeamName}-pipeline
+
 
   CFNRole:
     Type: AWS::IAM::Role
@@ -269,8 +257,7 @@ Resources:
       Tags:
       - Key: Name
         Value: !Sub ${TeamName}-ec2-iam-role
-      - Key: enviornment
-        Value: !Ref EnvType
+
   PipelineRole:
     Type: AWS::IAM::Role
     Properties:
@@ -311,5 +298,3 @@ Resources:
       Tags:
       - Key: Name
         Value: !Sub ${TeamName}-cfs-iam-role
-      - Key: enviornment
-        Value: !Ref EnvType
